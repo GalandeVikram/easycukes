@@ -27,6 +27,7 @@ import com.worldline.easycukes.scm.utils.MercurialHelper;
 import com.worldline.easycukes.scm.utils.SvnHelper;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
+import cucumber.api.java.en.When;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
@@ -45,6 +46,21 @@ import java.io.IOException;
 public class SCMStepdefs {
 
     protected static final EasyCukesConfiguration<CommonConfigurationBean> configuration = new EasyCukesConfiguration<>(CommonConfigurationBean.class);
+    
+	/*
+	 *  Used to convert base url into scm base url 
+	 */
+	private static final String SCM_BASE_URL = "/portal";
+	
+	/*
+	 *  Used to log message after commit
+	 */
+	private static final String COMMIT_DONE_MESSAGE = "Done Commit...";
+	
+	/*
+	 *  Used to log message before commit
+	 */
+	private static final String COMMITING_MESSAGE = "Commiting the project to Git repository...";
 
     /**
      * Allows to clone a remote Git repository into the specified location
@@ -62,7 +78,7 @@ public class SCMStepdefs {
             username = configuration.getValues().credentials.getLogin() != null ? configuration.getValues().credentials.getLogin() : "";
             password = configuration.getValues().credentials.getPassword() != null ? configuration.getValues().credentials.getPassword() : "";
         }
-        final String fullPath = baseUrl + DataInjector.injectData(url);
+        final String fullPath = baseUrl.replace(SCM_BASE_URL, "") + DataInjector.injectData(url);        
         // then clone
         GitHelper.clone(fullPath, username, password,
                 DataInjector.injectData(target));
@@ -85,7 +101,7 @@ public class SCMStepdefs {
             username = configuration.getValues().credentials.getLogin() != null ? configuration.getValues().credentials.getLogin() : "";
             password = configuration.getValues().credentials.getPassword() != null ? configuration.getValues().credentials.getPassword() : "";
         }
-        final String fullPath = baseUrl + DataInjector.injectData(url);
+        final String fullPath = baseUrl.replace(SCM_BASE_URL, "") + DataInjector.injectData(url);
         // then clone
         MercurialHelper.clone(fullPath, username, password,
                 DataInjector.injectData(target));
@@ -141,8 +157,8 @@ public class SCMStepdefs {
             password = configuration.getValues().credentials.getPassword() != null ? configuration.getValues().credentials.getPassword() : "";
         }
 
-        final String fullPath = baseUrl
-                + DataInjector.injectData(remoteRepository);
+        final String fullPath = baseUrl.replace(SCM_BASE_URL, "")+ DataInjector.injectData(remoteRepository);
+        
         final File repoLoc = new File(DataInjector.injectData(localRepository));
 
         // add, commit and push
@@ -170,7 +186,7 @@ public class SCMStepdefs {
             username = configuration.getValues().credentials.getLogin() != null ? configuration.getValues().credentials.getLogin() : "";
             password = configuration.getValues().credentials.getPassword() != null ? configuration.getValues().credentials.getPassword() : "";
         }
-        final String fullPath = baseUrl + DataInjector.injectData(url);
+        final String fullPath = baseUrl.replace(SCM_BASE_URL, "") + DataInjector.injectData(url);
         // then checkout
         SvnHelper.checkout(fullPath, username, password,
                 DataInjector.injectData(target));
@@ -202,5 +218,142 @@ public class SCMStepdefs {
                 DataInjector.injectData(message));
         log.info("Commit OK");
     }
+    
+    /**
+	 * Allows to create a branch in a given repository and execute git commit &
+	 * a git push command in the specified repository using the message provided
+	 * as a commit message
+	 * 
+	 * @param repository
+	 *            the location in which the git repository is located
+	 * @param message
+	 *            the message to be used as a commit message
+	 * @throws GitAPIException
+	 *             if something's going wrong while interacting with Git
+	 *             commands
+	 * @throws IOException
+	 *             if there's something wrong while committing the files
+	 */
+	@When("^I create a new branch in a git repository located in \"([^\"]*)\" having name \"([^\"]*)\" with the message \"([^\"]*)\"$")
+	public void createGitBarnch(String repository, String branchName,
+								String message) throws GitAPIException {
+		log.info(COMMITING_MESSAGE);
+		final File gitworkDir = new File(DataInjector.injectData(repository));
+
+		String username = "";
+		String password = null;
+		if (configuration.getValues().credentials != null) {
+			username = configuration.getValues().credentials.getLogin() != null ? configuration
+					.getValues().credentials.getLogin() : "";
+			password = configuration.getValues().credentials.getPassword() != null ? configuration
+					.getValues().credentials.getPassword() : "";
+		}
+		GitHelper.createBranch(gitworkDir, branchName, username, password,
+				DataInjector.injectData(message));
+		log.info(COMMIT_DONE_MESSAGE);
+	}
+
+
+	/**
+	 * Allows to delete a branch in a given repository and execute git commit &
+	 * a git push command in the specified repository using the message provided
+	 * as a commit message
+	 * 
+	 * @param repository
+	 *            the location in which the git repository is located
+	 * @param message
+	 *            the message to be used as a commit message
+	 * @throws GitAPIException
+	 *             if something's going wrong while interacting with Git
+	 *             commands
+	 * @throws IOException
+	 *             if there's something wrong while committing the files
+	 */
+	@When("^I delete a branch from a git repository located in \"([^\"]*)\" having name \"([^\"]*)\" with the message \"([^\"]*)\"$")
+	public void deleteGitBarnch(String repository, String branchName,
+								String message) throws GitAPIException {
+		log.info(COMMITING_MESSAGE);
+		final File gitworkDir = new File(DataInjector.injectData(repository));
+
+		String username = "";
+		String password = null;
+		if (configuration.getValues().credentials != null) {
+			username = configuration.getValues().credentials.getLogin() != null ? configuration
+					.getValues().credentials.getLogin() : "";
+			password = configuration.getValues().credentials.getPassword() != null ? configuration
+					.getValues().credentials.getPassword() : "";
+		}
+		GitHelper.deleteBranch(gitworkDir, branchName, username, password,
+				DataInjector.injectData(message));
+		log.info(COMMIT_DONE_MESSAGE);
+	}
+
+
+	/**
+	 * Allows to create a tag in a given repository and execute git commit & a
+	 * git push command in the specified repository using the message provided
+	 * as a commit message
+	 * 
+	 * @param repository
+	 *            the location in which the git repository is located
+	 * @param message
+	 *            the message to be used as a commit message
+	 * @throws GitAPIException
+	 *             if something's going wrong while interacting with Git
+	 *             commands
+	 * @throws IOException
+	 *             if there's something wrong while committing the files
+	 */
+	@When("^I create a new tag in a git repository located in \"([^\"]*)\" having name \"([^\"]*)\" with the message \"([^\"]*)\"$")
+	public void createGitTag(String repository, String tagName, String message) throws GitAPIException {
+		log.info(COMMITING_MESSAGE);
+		final File gitworkDir = new File(DataInjector.injectData(repository));
+
+		String username = "";
+		String password = null;
+		if (configuration.getValues().credentials != null) {
+			username = configuration.getValues().credentials.getLogin() != null ? configuration
+					.getValues().credentials.getLogin() : "";
+			password = configuration.getValues().credentials.getPassword() != null ? configuration
+					.getValues().credentials.getPassword() : "";
+		}
+		GitHelper.createTag(gitworkDir, tagName, username, password,
+				DataInjector.injectData(message));
+		log.info(COMMIT_DONE_MESSAGE);
+	}
+
+
+	/**
+	 * Allows to delete a branch in a given repository and execute git commit &
+	 * a git push command in the specified repository using the message provided
+	 * as a commit message
+	 * 
+	 * @param repository
+	 *            the location in which the git repository is located
+	 * @param message
+	 *            the message to be used as a commit message
+	 * @throws GitAPIException
+	 *             if something's going wrong while interacting with Git
+	 *             commands
+	 * @throws IOException
+	 *             if there's something wrong while committing the files
+	 */
+	@When("^I delete a tag from a git repository located in \"([^\"]*)\" having name \"([^\"]*)\" with the message \"([^\"]*)\"$")
+	public void deleteGitTag(String repository, String tagName, String message) throws GitAPIException {
+		log.info(COMMITING_MESSAGE);
+		
+		final File gitworkDir = new File(DataInjector.injectData(repository));
+		
+		String username = "";
+		String password = null;
+		if (configuration.getValues().credentials != null) {
+			username = configuration.getValues().credentials.getLogin() != null ? configuration
+					.getValues().credentials.getLogin() : "";
+			password = configuration.getValues().credentials.getPassword() != null ? configuration
+					.getValues().credentials.getPassword() : "";
+		}
+		GitHelper.deleteTag(gitworkDir, tagName, username, password, message);
+		log.info(COMMIT_DONE_MESSAGE);
+	}
 
 }
