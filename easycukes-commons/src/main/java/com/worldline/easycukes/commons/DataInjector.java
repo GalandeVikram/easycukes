@@ -19,7 +19,9 @@ package com.worldline.easycukes.commons;
 
 import com.worldline.easycukes.commons.config.EasyCukesConfiguration;
 import com.worldline.easycukes.commons.config.beans.CommonConfigurationBean;
+
 import lombok.NonNull;
+
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.regex.Matcher;
@@ -38,6 +40,8 @@ import java.util.regex.Pattern;
  */
 public class DataInjector {
 
+	protected static final EasyCukesConfiguration<CommonConfigurationBean> configuration = new EasyCukesConfiguration<>(CommonConfigurationBean.class);
+	
     /**
      * Token allowing to define the start of a variable
      */
@@ -48,11 +52,6 @@ public class DataInjector {
      */
     private static final String TOKEN_END = "__$";
     
-    /**
-     * Prefix to identify the resource references created by cucumber tests 
-     */
-    private static final String CUCUMBER_PREFIX = "kcutst";
-
     /**
      * {@link Pattern} allowing to find the variables in the {@link String}
      * elements to be submitted
@@ -74,7 +73,12 @@ public class DataInjector {
      * be replaced by the value present in the execution context
      */
     public static String injectData(@NonNull final String s) {
+    	String cucumberPrefix="";
         EasyCukesConfiguration<CommonConfigurationBean> configuration = new EasyCukesConfiguration<>(CommonConfigurationBean.class);
+        
+        if (configuration.getValues().getVariables() != null && configuration.getValues().getVariables().get(Constants.CUCUMBER_PREFIX) != null)
+        	cucumberPrefix = configuration.getValues().getVariables().get(Constants.CUCUMBER_PREFIX);
+        
         // 0. We store the initial string in order to use it for injecting
         // tokens
         String result = s;
@@ -98,7 +102,7 @@ public class DataInjector {
                     // 7. We generate a value for the token and put it in
                     // the
                     // context
-                    ExecutionContext.put(token, CUCUMBER_PREFIX+RandomStringUtils.randomAlphabetic(11)
+                    ExecutionContext.put(token, cucumberPrefix+RandomStringUtils.randomAlphabetic(11)
                             .toLowerCase());
             // 8. Then, we'll inject the value from the context directly in the
             // result
